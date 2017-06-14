@@ -15,6 +15,9 @@ syn match   i3Var "\$\w\+"
 
 " Key modifiers
 syn keyword i3KeyModifier Shift Control Ctrl Mod1 Mod2 Mod3 Mod4 Mod5 Mode_switch
+syn keyword i3SpecialKey Return Escape End Print Space Enter
+
+hi link i3SpecialKey i3KeyModifier
 
 " Strings
 syn region  i3SimpleString keepend start='[^ \t]' end='$\|;' contained contains=i3ChainDelimiter,i3Var
@@ -22,20 +25,37 @@ syn match   i3QuotedString '"[^"]\+"' contained
 syn cluster i3String contains=i3SimpleString,i3QuotedString
 
 " Config commands
-syn keyword i3ConfigCommand bind bindcode bindsym assign new_window popup_during_fullscreen font floating_modifier default_orientation workspace_layout for_window focus_follows_mouse bar position colors output tray_output workspace_buttons workspace_auto_back_and_forth binding_mode_indicator debuglog floating_minimum_size floating_maximum_size force_focus_wrapping force_xinerama force_display_urgency_hint hidden_state modifier new_float shmlog socket_path verbose mouse_warping strip_workspace_numbers focus_on_window_activation no_focus
+syn keyword i3ConfigCommand bind bindcode bindsym new_window popup_during_fullscreen font floating_modifier default_orientation workspace_layout focus_follows_mouse bar position colors output tray_output workspace_buttons workspace_auto_back_and_forth binding_mode_indicator debuglog floating_minimum_size floating_maximum_size force_focus_wrapping force_xinerama force_display_urgency_hint hidden_state modifier new_float shmlog socket_path verbose mouse_warping strip_workspace_numbers focus_on_window_activation no_focus tray_padding height
 syn match   i3IpcSocket "ipc[-_]socket" nextgroup=@i3String skipwhite
 
+syn match i3HeightCommand "^[ \t]*height"
+hi link i3HeightCommand i3ConfigCommand
+
+syn match i3Split "split" nextgroup=i3SplitMode skipwhite
+syn match i3SplitMode "[vh]" contained
+hi link i3Split i3Command
+hi link i3SplitMode Constant
+
 " Command keywords
-syn keyword i3Command exit reload restart kill fullscreen global layout border focus move open split append_layout mark unmark resize grow shrink show nop rename title_format sticky
-syn keyword i3Param 1pixel default stacked tabbed normal none tiling stacking floating enable disable up down horizontal vertical auto up down left right parent child px or ppt leave_fullscreen toggle mode_toggle scratchpad width height top bottom client hide primary yes all active window container to absolute center on off x ms h v smart ignore pixel splith splitv output true
+syn keyword i3Command exit reload restart kill fullscreen global layout border focus move open append_layout mark unmark resize grow shrink show nop rename title_format sticky
+syn keyword i3Param 1pixel default stacked tabbed normal none tiling stacking floating enable disable up down horizontal vertical auto up down left right parent child px or ppt leave_fullscreen toggle mode_toggle scratchpad width height top bottom hide primary yes all active window container to absolute center on off ms smart ignore pixel splith splitv output true
 syn match   i3DashedParam '--\(release\|border\|whole-window\|toggle\)' skipwhite
 syn match   i3NoStartupId '--no-startup-id' contained
 syn keyword i3WsSpecialParam next prev next_on_output prev_on_output back_and_forth current number
 syn keyword i3BordersSpecialParam none vertical horizontal both
 syn keyword i3ModeParam dock hide invisible skipwhite
+hi match gui=bold
 
 " these are not keywords but we add them for consistency
 syn keyword i3PseudoParam no false inactive
+" http://build.i3wm.org/docs/userguide.html#command_criteria
+syn match i3CommandScope '\[.*\]' contains=@i3CommandCriterias,i3QuotedString
+" syn keyword i3Criteria class instance window_role window_type id title urgent workspace con_mark con_id floating tiling
+syn cluster i3CommandCriterias contains=i3CriteriaWithString,i3CriteriaNoString,i3CriteriaUrgent
+syn match i3CriteriaNoString "floating\|tiling"
+syn match i3CriteriaWithString "\(class\|instance\|window_role\|window_type\|id\|title\|workspace\|con_mark\|con_id\)=" nextgroup=i3QuotedString
+syn match i3CriteriaUrgent "urgent=" nextgroup=i3CriteriaUrgentParam
+syn match i3CriteriaUrgentParam "oldest\|latest"
 
 " Exec commands
 syn region  i3ExecCommand keepend start='[^ \t]' end='$\|;' contained contains=i3ChainDelimiter,i3Var,i3NoStartupId
@@ -73,12 +93,19 @@ syn match   i3Comment "^\s*#.*$" contains=i3Todo
 syn match i3Error ".*$" contained
 
 " Hex color code
-syn match i3ColorLast "#[0-9a-fA-F]\{6\}" contained nextgroup=i3Error skipwhite
-syn match i3Color2nd "#[0-9a-fA-F]\{6\}" contained nextgroup=i3ColorLast skipwhite
-syn match i3Color1st "#[0-9a-fA-F]\{6\}" contained nextgroup=i3Color2nd skipwhite
+syn match i3Color4 "#[0-9a-fA-F]\{6\}" contained nextgroup=i3Color3 skipwhite
+syn match i3Color3 "#[0-9a-fA-F]\{6\}" contained nextgroup=i3Color2 skipwhite
+syn match i3Color2 "#[0-9a-fA-F]\{6\}" contained nextgroup=i3Color1 skipwhite
+syn match i3Color1 "#[0-9a-fA-F]\{6\}" contained nextgroup=i3Error skipwhite
 
-syn match i3ColorDef1 "client\.background\|statusline\|background\|separator\|statusline" nextgroup=i3ColorLast skipwhite
-syn match i3ColorDef3 "client\.\(focused_inactive\|focused\|unfocused\|urgent\)\|inactive_workspace\|urgent_workspace\|focused_workspace\|active_workspace" nextgroup=i3Color1st skipwhite
+syn match i3Assignment "assign" nextgroup=i3CommandCriteria skipwhite
+syn match i3ForWindow "for_window" nextgroup=i3CommandCriteria skipwhite
+
+hi link i3Assignment Define
+hi link i3ForWindow Define
+
+syn match i3ColorDef1 "client\.background\|statusline\|background\|separator\|statusline" nextgroup=i3Color1 skipwhite
+syn match i3ColorDef3 "client\.\(focused_inactive\|focused\|unfocused\|urgent\)\|inactive_workspace\|urgent_workspace\|focused_workspace\|active_workspace" nextgroup=i3Color4 skipwhite
 
 highlight link i3ChainDelimiter       Operator
 highlight link i3Operators            Operator
@@ -91,9 +118,10 @@ highlight link i3Param                Constant
 highlight link i3PseudoParam          Constant
 highlight link i3DashedParam          Constant
 highlight link i3NoStartupId          Constant
-highlight link i3Color1st             Constant
-highlight link i3Color2nd             Constant
-highlight link i3ColorLast            Constant
+highlight link i3Color1             Constant
+highlight link i3Color2             Constant
+highlight link i3Color3             Constant
+highlight link i3Color4             Constant
 highlight link i3WsSpecialParam       Constant
 highlight link i3BordersSpecialParam  Constant
 highlight link i3ModeParam            Constant
